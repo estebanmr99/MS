@@ -25,8 +25,8 @@ def loadValues(matrix):
     variables = int(fistLine[2])
     restrictions = int(fistLine[3])
 
-    if (optimization == 'min'):
-        matrix = mintoMax(matrix)
+    
+    matrix = mintoMax(optimization, matrix)
 
     result = ''
 
@@ -46,20 +46,73 @@ def loadValues(matrix):
     print(result)
 
 
-def mintoMax(matrix):
-    for variable in range(len(matrix[0])):
-        matrix[0][variable] = int(matrix[0][variable]) * -1
+def mintoMax(optimization, matrix):
+    if (optimization == 'max'):
+        for variable in range(len(matrix[0])):
+            matrix[0][variable] = int(matrix[0][variable]) * -1
     return matrix
 
 
 def simplex(matrix, optimization, variables, restrictions):
 
+    matrixLen = len(matrix)
+
     matrix = addNonBasicVariables(0, matrix, variables, restrictions)
 
-    matrix = np.array([np.array(row) for row in matrix])
+    matrix = np.array([np.array(row) for row in matrix], dtype=object)
+
+    pivotValues = getPivotValues(matrix)
+
+    pivotNumber = pivotValues[0]
+    pivotRow = pivotValues[1][0]
+    pivotColumn = pivotValues[1][1]
+
+    # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
+
+    #divide toda la fila pivot por el numero pivot
+    matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
+
+    # hace las operaciones entre las filas y columnas
+    for row in range(matrixLen):
+        if (row == pivotRow or matrix[row][pivotColumn] == 0):
+            continue
+        
+        idkHowtoCallIt = matrix[row][pivotColumn] * -1
+        
+        test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
+
+        matrix[row] = np.add(matrix[row], test)
+
 
     print(matrix)
     return 'nothig'
+
+def getPivotValues(matrix):
+    lowestNumber = np.amin(matrix[0])
+    indexOfLowestNumber = (np.where(matrix[0] == lowestNumber))[0][0]
+
+    pivotValues = []
+    matrixLen = len(matrix)
+    rowLen = len(matrix[0]) - 1
+    pivotNumber = 0
+
+    for row in range(1, matrixLen):
+        posiblePivotNumber = matrix[row][indexOfLowestNumber]
+        if (posiblePivotNumber <= 0):
+            continue
+        rigthSide =  matrix[row][rowLen] / posiblePivotNumber
+        if (len(pivotValues) == 0):
+            pivotValues.insert(0, rigthSide)
+            pivotValues.insert(1, row)
+            pivotNumber = posiblePivotNumber
+        if(rigthSide < pivotValues[0]):
+            pivotValues[0] = rigthSide
+            pivotValues[1] = row
+            pivotNumber = posiblePivotNumber
+    
+    pivotValues[0] = pivotNumber
+    pivotValues[1] = [pivotValues[1], indexOfLowestNumber]
+    return pivotValues
 
 
 def bigM(matrix, optimization, variables, restrictions):
