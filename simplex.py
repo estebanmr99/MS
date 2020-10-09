@@ -43,7 +43,7 @@ def loadValues(matrix):
         print('A non a valid method was sent as parameter')
         return None
 
-    print(result)
+    print("The final result is: U = " + str(result[0]) + ", " + str(result[1]))
 
 
 def mintoMax(optimization, matrix):
@@ -61,31 +61,53 @@ def simplex(matrix, optimization, variables, restrictions):
 
     matrix = np.array([np.array(row) for row in matrix], dtype=object)
 
-    pivotValues = getPivotValues(matrix)
+    while(isSolution(matrix)):
+        pivotValues = getPivotValues(matrix)
 
-    pivotNumber = pivotValues[0]
-    pivotRow = pivotValues[1][0]
-    pivotColumn = pivotValues[1][1]
+        pivotNumber = pivotValues[0]
+        pivotRow = pivotValues[1][0]
+        pivotColumn = pivotValues[1][1]
 
-    # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
+        # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
 
-    #divide toda la fila pivot por el numero pivot
-    matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
+        #divide toda la fila pivot por el numero pivot
+        matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
 
-    # hace las operaciones entre las filas y columnas
-    for row in range(matrixLen):
-        if (row == pivotRow or matrix[row][pivotColumn] == 0):
-            continue
-        
-        idkHowtoCallIt = matrix[row][pivotColumn] * -1
-        
-        test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
+        # hace las operaciones entre las filas y columnas
+        for row in range(matrixLen):
+            if (row == pivotRow or matrix[row][pivotColumn] == 0):
+                continue
+            
+            idkHowtoCallIt = matrix[row][pivotColumn] * -1
+            
+            test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
 
-        matrix[row] = np.add(matrix[row], test)
+            matrix[row] = np.add(matrix[row], test)
+
+    result = finalResult(matrix, matrixLen)
+    
+    return result
+
+def finalResult(matrix, matrixLen):
+    result = []
+    for i in range(matrixLen):
+        if (i == 0):
+            result.append(matrix[i][-1])
+            result.append([])
+        else:
+            result[1].append(matrix[i][-1])
+
+    return result
 
 
-    print(matrix)
-    return 'nothig'
+def isSolution(matrix):
+    lowestNumber = np.amin(matrix[0])
+
+    if(lowestNumber >= 0 ):
+        return False
+
+    return True
+
 
 def getPivotValues(matrix):
     lowestNumber = np.amin(matrix[0])
