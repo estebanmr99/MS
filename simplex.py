@@ -1,6 +1,8 @@
 import sys
 import numpy as np
 
+M = 100
+
 def getFileName():
     return sys.argv[1]
 
@@ -87,6 +89,57 @@ def simplex(matrix, optimization, variables, restrictions):
     result = finalResult(matrix, matrixLen)
     
     return result
+
+def searchEqual(matrix):
+    matrixLen = len(matrix)
+    lineCount = 0
+    for row in range(matrixLen):
+        lineLen = len(row)
+        if (row[lineLen - 1] == "="):
+            return lineCount
+            return lineCount
+        lineCount += 1
+
+def bigM(matrix, optimization, variables, restrictions):
+
+    restrictLine = searchEqual(matrix)
+    matrixLen = len(matrix)
+
+    matrix = addNonBasicVariables(0, matrix, variables, restrictions)
+
+    matrix = np.array([np.array(row) for row in matrix], dtype=object)
+
+    for v in range(variables):
+        matrix[0][v] = matrix[0][v] + (M * matrix[restrictLine][v])
+    matrix[0][matrixLen-1] = matrix[0][matrixLen-1] + (M * matrix[restrictLine][matrixLen-1])
+
+    while (isSolution(matrix)):
+        pivotValues = getPivotValues(matrix)
+
+        pivotNumber = pivotValues[0]
+        pivotRow = pivotValues[1][0]
+        pivotColumn = pivotValues[1][1]
+
+        # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
+
+        # divide toda la fila pivot por el numero pivot
+        matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
+
+        # hace las operaciones entre las filas y columnas
+        for row in range(matrixLen):
+            if (row == pivotRow or matrix[row][pivotColumn] == 0):
+                continue
+
+            idkHowtoCallIt = matrix[row][pivotColumn] * -1
+
+            test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
+
+            matrix[row] = np.add(matrix[row], test)
+
+    result = finalResult(matrix, matrixLen)
+
+    return result
+
 
 def finalResult(matrix, matrixLen):
     result = []
