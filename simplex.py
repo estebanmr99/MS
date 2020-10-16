@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from copy import deepcopy
 
 M = 100
 
@@ -85,6 +86,12 @@ def simplex(matrix, optimization, variables, restrictions):
 
             matrix[row] = np.add(matrix[row], test)
 
+    #aqui se tiene que guardar la matriz
+
+    # en caso de que la optimizacion sea 'min' se  multiplica por -1 U
+    if(optimization == 'min'):
+        matrix[0][len(matrix[0]) - 1] =  matrix[0][len(matrix[0]) - 1] * -1
+
     print(matrix)
 
     result = finalResult(matrix, matrixLen)
@@ -97,7 +104,6 @@ def searchEqual(matrix):
     for row in range(matrixLen):
         lineLen = len(row)
         if (row[lineLen - 1] == "="):
-            return lineCount
             return lineCount
         lineCount += 1
 
@@ -155,9 +161,13 @@ def finalResult(matrix, matrixLen):
 
 
 def isSolution(matrix):
-    lowestNumber = np.amin(matrix[0])
+    lowestNumber = np.sort(matrix[0])
+    indexOfLowestNumber = (np.where(matrix[0] == lowestNumber[0]))[0][0]
 
-    if(lowestNumber >= 0 ):
+    if (indexOfLowestNumber == (len(matrix[0]) - 1)):
+        indexOfLowestNumber = (np.where(matrix[0] == lowestNumber[1]))[0][0]
+
+    if(matrix[0][indexOfLowestNumber] >= 0 ):
         return False
 
     return True
@@ -197,7 +207,7 @@ def getPivotValues(matrix):
 def twoPhases(matrix, optimization, variables, restrictions):
     matrixLen = len(matrix)
 
-    copyMatrix = matrix
+    copyMatrix = deepcopy(matrix)
 
     matrix = addNonBasicVariables(2, matrix, variables, restrictions)
 
@@ -209,10 +219,12 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
     # aqui hay que guardar en el archivo
 
+    #es un arreglo que posee el indice donde estan las variables artificiales
     artifialValuesIndex = (np.where(matrix[0] != 0))[0]
 
     count = 0
 
+    #prepara la funcion objetivo para poder comenzar con la fase 1
     while(not isPrefase1Solution(matrix, artifialValuesIndex)):
         pivotRow = getPivotRowPrefase1(matrix, artifialValuesIndex)
 
@@ -226,85 +238,120 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
     # aqui hay que guardar en el archivo
 
-    # while(isSolution(matrix)):
-    pivotValues = getPivotValues(matrix)
+    # hace la fase 1 utilizando el algoritmo del simplex
+    while(isSolution(matrix)):
+        pivotValues = getPivotValues(matrix)
 
-    pivotNumber = pivotValues[0]
-    pivotRow = pivotValues[1][0]
-    pivotColumn = pivotValues[1][1]
+        pivotNumber = pivotValues[0]
+        pivotRow = pivotValues[1][0]
+        pivotColumn = pivotValues[1][1]
 
-    # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
+        # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
 
-    # divide toda la fila pivot por el numero pivot
-    matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
+        # divide toda la fila pivot por el numero pivot
+        matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
 
-    # hace las operaciones entre las filas y columnas
-    for row in range(matrixLen):
-        if (row == pivotRow or matrix[row][pivotColumn] == 0):
-            continue
-        
-        idkHowtoCallIt = matrix[row][pivotColumn] * -1
-        
-        test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
+        # hace las operaciones entre las filas y columnas
+        for row in range(matrixLen):
+            roundMatrix(matrix)
+            if (row == pivotRow or matrix[row][pivotColumn] == 0):
+                continue
+            
+            idkHowtoCallIt = matrix[row][pivotColumn] * -1
+            
+            test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
 
-        matrix[row] = np.add(matrix[row], test)
+            matrix[row] = np.add(matrix[row], test)
 
-    # 2 -----------------------------------------------------------------------------------------------------------------
+        roundMatrix(matrix)
 
-    pivotValues = getPivotValues(matrix)
-
-    pivotNumber = pivotValues[0]
-    pivotRow = pivotValues[1][0]
-    pivotColumn = pivotValues[1][1]
-
-    # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
-
-    # divide toda la fila pivot por el numero pivot
-    matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
-
-    # hace las operaciones entre las filas y columnas
-    for row in range(matrixLen):
-        if (row == pivotRow or matrix[row][pivotColumn] == 0):
-            continue
-        
-        idkHowtoCallIt = matrix[row][pivotColumn] * -1
-        
-        test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
-
-        matrix[row] = np.add(matrix[row], test)
-
-    # 3 -----------------------------------------------------------------------------------------------------------------
-
-    pivotNumber = 1.6666666666666663
-    pivotRow = 2
-    pivotColumn = 2
+    #paso de eliminar las variables artificiales
+    matrix = np.delete(matrix, artifialValuesIndex, 1)
 
     # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
 
-    # divide toda la fila pivot por el numero pivot
-    matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
-
-    # hace las operaciones entre las filas y columnas
-    # for row in range(matrixLen):
-        # if (row == pivotRow or matrix[row][pivotColumn] == 0):
-        #     continue
-    row = 0
-
-    idkHowtoCallIt = matrix[row][pivotColumn] * -1
+    # sustituir los valores en la función objetivo
+    for objOrgValues in range(variables):
+        matrix[0][objOrgValues] = num(copyMatrix[0][objOrgValues])
     
-    test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
+    # hacer cero las variables básicas
+    count = 0
 
-    print (matrix[row])
+    while(not isfase2Solution(matrix, variables)):
+        roundMatrix(matrix)
+        pivotRow = getPivotRowfase2(matrix, variables)
 
-    print (test)
+        idkHowtoCallIt = matrix[0][count] * -1
 
-    matrix[row] = np.add(matrix[row], test)
+        test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
 
-    print(matrix[row])
+        matrix[0] = np.add(matrix[0], test)
+
+        count += 1
+
+    roundMatrix(matrix)
+
+    # termina la fase 2 con el algoritmo de simplex
+    while(isSolution(matrix)):
+        pivotValues = getPivotValues(matrix)
+
+        pivotNumber = pivotValues[0]
+        pivotRow = pivotValues[1][0]
+        pivotColumn = pivotValues[1][1]
+
+        # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
+
+        # divide toda la fila pivot por el numero pivot
+        matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
+
+        # hace las operaciones entre las filas y columnas
+        for row in range(matrixLen):
+            roundMatrix(matrix)
+            if (row == pivotRow or matrix[row][pivotColumn] == 0):
+                continue
+            
+            idkHowtoCallIt = matrix[row][pivotColumn] * -1
+            
+            test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
+
+            matrix[row] = np.add(matrix[row], test)
+
+        roundMatrix(matrix)
+
+    #aqui se tiene que guardar la matriz
+
+    # en caso de que la optimizacion sea 'min' se  multiplica por -1 U
+    if(optimization == 'min'):
+        matrix[0][len(matrix[0]) - 1] =  matrix[0][len(matrix[0]) - 1] * -1
+
+    #obtiene el resultado EBNF de la ultima modificacion de la matriz 
+    result =  finalResult(matrix,matrixLen)
+
+    print(matrix)
+
+    return result
+
+# verifica que las variables basicas se hayan vuelto cero en la fase 2
+def isfase2Solution(matrix, variables):
+    isReady = False
+    for i in range(variables):
+        if (matrix[0][i] == 0):
+            isReady = True
+        else:
+            isReady = False
+    return isReady
+
+# obtiene la fila que posee un 1 para poder hacer cero las variables basicas de la fase 2
+def getPivotRowfase2(matrix, variables):
+    matrixLen = len(matrix)
+
+    for row in range(1, matrixLen):
+        for i in range(variables):
+            if(matrix[row][i] == 1 and matrix[0][i] != 0):
+                return row
 
 
-    return [[1],[3]]
-
+#verifica que se hagan cero las variables atificiales, mientras no sea sean cero devuelve False
 def isPrefase1Solution(matrix, artificialValuesIndex):
     isReady = False
     for i in artificialValuesIndex:
@@ -315,8 +362,16 @@ def isPrefase1Solution(matrix, artificialValuesIndex):
 
     return isReady
 
-def getPivotRowPrefase1(matrix, artifialValuesIndex):
+#cada valor en la matrix es necesario redondearlo para que la precision no afecte, se redondea con 5 decimales 
+def roundMatrix(matrix):
+    for row in range(len(matrix)):
+        for column in range((len(matrix[row]))):
+            matrix[row][column] = round(matrix[row][column],5)
 
+    return matrix
+
+# obtiene la fila que posee un 1 en las restricciones para poder hacer cero las variables artificiales en la funcion objetivo
+def getPivotRowPrefase1(matrix, artifialValuesIndex):
     matrixLen = len(matrix)
 
     for row in range(1, matrixLen):
