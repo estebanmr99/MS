@@ -35,7 +35,6 @@ def loadValues(matrix):
         result = simplex(matrix, optimization, variables, restrictions)
 
     elif (method == 1):
-        matrix = mintoMax(optimization, matrix)
         result = bigM(matrix, optimization, variables, restrictions)
 
     elif (method == 2):
@@ -98,27 +97,14 @@ def simplex(matrix, optimization, variables, restrictions):
     
     return result
 
-def searchEqual(matrix):
-    matrixLen = len(matrix)
-    lineCount = 0
-    for row in range(matrixLen):
-        lineLen = len(row)
-        if (row[lineLen - 1] == "="):
-            return lineCount
-        lineCount += 1
-
 def bigM(matrix, optimization, variables, restrictions):
 
-    restrictLine = searchEqual(matrix)
     matrixLen = len(matrix)
 
-    matrix = addNonBasicVariables(0, matrix, variables, restrictions)
+    matrix = addNonBasicVariables(1, matrix, variables, restrictions)
 
     matrix = np.array([np.array(row) for row in matrix], dtype=object)
-
-    for v in range(variables):
-        matrix[0][v] = matrix[0][v] + (M * matrix[restrictLine][v])
-    matrix[0][matrixLen-1] = matrix[0][matrixLen-1] + (M * matrix[restrictLine][matrixLen-1])
+    
 
     while (isSolution(matrix)):
         pivotValues = getPivotValues(matrix)
@@ -134,6 +120,7 @@ def bigM(matrix, optimization, variables, restrictions):
 
         # hace las operaciones entre las filas y columnas
         for row in range(matrixLen):
+            roundMatrix(matrix)
             if (row == pivotRow or matrix[row][pivotColumn] == 0):
                 continue
 
@@ -142,6 +129,9 @@ def bigM(matrix, optimization, variables, restrictions):
             test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
 
             matrix[row] = np.add(matrix[row], test)
+
+    roundMatrix(matrix)
+    print(matrix)
 
     result = finalResult(matrix, matrixLen)
 
@@ -194,10 +184,20 @@ def getPivotValues(matrix):
             pivotValues.insert(0, rigthSide)
             pivotValues.insert(1, row)
             pivotNumber = posiblePivotNumber
+            continue
+
+        #verifica si hay soluciones de generadas en cada iteración -- si funciona para simplex
+        if(rigthSide == pivotValues[0]):
+            print("La solución es degenerada, los números en la columna pivot que generan el caso son:" + str(pivotNumber) + " y " + str(posiblePivotNumber))
         if(rigthSide < pivotValues[0]):
             pivotValues[0] = rigthSide
             pivotValues[1] = row
             pivotNumber = posiblePivotNumber
+    
+    #verifica la U no esta acotada -- si funciona para simplex
+    if(pivotNumber == 0):
+        print('En la iteracion actual todos los valores en la columna pivot son negativos o cero, por lo tanto la U no está acotada')
+        sys.exit()
     
     pivotValues[0] = pivotNumber
     pivotValues[1] = [pivotValues[1], indexOfLowestNumber]
@@ -406,9 +406,44 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
                 matrix[row][variables + count] = 1
                 count += 1
 
-
     elif (method == 1):
-        test = 1
+        count = 0
+        equalRow = []
+        excessColumn = []
+        for row in matrix:
+            if ('=' in row):
+                equalRow.append(count)
+            elif ('>=' in row):
+                excessColumn.append(count)
+
+            if (count <= restrictions):
+                matrix[0].append(0)
+                count += 1
+        matrix = formatMatrix(matrix)
+        count = 0
+
+        totalOfVaribles = len(matrix[0])
+
+        for row in range(len(matrix)):
+            for column in range(totalOfVaribles):
+                if (row >= 1 and column > variables):
+                    matrix[row].insert((len(matrix[row]) - 1), 0)
+            if (row >= 1):
+                matrix[row][variables + count] = 1
+                count += 1
+            elif(row in equalRow):
+                matrix[row][variables + count] = -1
+                count += 1
+        if(equalRow):
+            for er in equalRow:
+                for v in range(variables):
+                    matrix[0][v] = matrix[0][v] + (M * matrix[er][v] * -1)
+                matrix[0][-1] = matrix[0][-1] + (M * matrix[er][-1] * -1)
+        emptyColumn = np.zeros(len(matrix), dtype= int)
+        if(excessColumn):
+            for ex in excessColumn:
+                np.insert(matrix, variables + ex, emptyColumn, 1)
+                matrix[ex][variables + ex] = -1
 
     elif (method == 2):
         count = 0
