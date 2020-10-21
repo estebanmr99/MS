@@ -520,7 +520,7 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
 
         #ajuste del tamaño de la matriz y deteccion de estados especiales para el metodo GranM
         for row in matrix:
-            if(row[-1] < 0):
+            if(num(row[-1]) < 0):
                 row = row * -1
                 if('<=' in row):
                     row[-2] = '>='
@@ -650,16 +650,10 @@ def formatMatrix(matrix):
     return matrix
 
 def num(s):
-    if(s < 0):
-        try:
-            return float(s)
-        except ValueError:
-            return int(s)
-    else:
-        try:
-            return int(s)
-        except ValueError:
-            return float(s)
+    try:
+        return float(s)
+    except ValueError:
+        return int(s)
 def main():
     listOfLists = fileOperations()
     loadValues(listOfLists)
