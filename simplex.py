@@ -5,6 +5,7 @@ import numpy as np
 from copy import deepcopy
 
 M = 100
+indexOfArtificialsBigM = []
 outputFileName = ''
 
 def getFileName():
@@ -57,12 +58,34 @@ def mintoMax(optimization, matrix):
             matrix[0][variable] = num(matrix[0][variable]) * -1
     return matrix
 
+def isMultiplesolutions(matrix, basicVariables):
+    nonBasicVariables = []
+    lenURow = len(matrix[0])
+
+    for i in range(lenURow):
+        if ((i + 1) in basicVariables):
+            nonBasicVariables.append(i)
+
+    for i in range(len(nonBasicVariables)):
+        if  (-0.0001 <= matrix[0][i] <= 0.0001):
+            print("Esta problema posee soluciones multiples")
+            # aqui guarda en archivo
+
+    return matrix
+
 
 def simplex(matrix, optimization, variables, restrictions):
 
     matrixLen = len(matrix)
 
     matrix = addNonBasicVariables(0, matrix, variables, restrictions)
+
+    basicVaribles = []
+
+    for i in range(variables + 1, (len(matrix[0]))):
+        basicVaribles.append(i)
+    
+    print(basicVaribles)
 
     matrix = np.array([np.array(row) for row in matrix], dtype=object)
 
@@ -75,20 +98,28 @@ def simplex(matrix, optimization, variables, restrictions):
 
         # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
 
+        print('Variable entrante: '  + str(pivotColumn + 1)  + ' ---- ' + 'variable saliente: ' + str(basicVaribles[pivotRow - 1]))
+
+        basicVaribles[pivotRow - 1] = pivotColumn + 1
+
+        print(basicVaribles)
+
         #divide toda la fila pivot por el numero pivot
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
 
         # hace las operaciones entre las filas y columnas
         for row in range(matrixLen):
+            roundMatrix(matrix)
             if (row == pivotRow or matrix[row][pivotColumn] == 0):
                 continue
-
+            
             idkHowtoCallIt = matrix[row][pivotColumn] * -1
-
+            
             test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
 
             matrix[row] = np.add(matrix[row], test)
 
+    roundMatrix(matrix)
     #aqui se tiene que guardar la matriz
 
     # en caso de que la optimizacion sea 'min' se  multiplica por -1 U
@@ -97,8 +128,10 @@ def simplex(matrix, optimization, variables, restrictions):
 
     print(matrix)
 
-    result = finalResult(matrix, matrixLen)
+    isMultiplesolutions(matrix, basicVaribles)
 
+    result = finalResult(matrix, matrixLen)
+    
     return result
 
 def bigM(matrix, optimization, variables, restrictions):
@@ -109,7 +142,22 @@ def bigM(matrix, optimization, variables, restrictions):
 
     matrix = np.array([np.array(row) for row in matrix], dtype=object)
 
+    # manejo de varibles basicas que hay en la iteracion
+    basicVaribles = []
 
+    for i in range(len(indexOfArtificialsBigM)):
+        basicVaribles.append(indexOfArtificialsBigM[i] + 1)
+
+    count = 0
+
+    for i in range((restrictions - len(basicVaribles))):
+        basicVaribles.insert(count, variables + 1 + i)
+        count += 1
+    
+    print(basicVaribles)
+
+    count = 0
+    
     while (isSolution(matrix)):
         pivotValues = getPivotValues(matrix)
 
@@ -118,6 +166,12 @@ def bigM(matrix, optimization, variables, restrictions):
         pivotColumn = pivotValues[1][1]
 
         # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
+
+        print('Variable entrante: '  + str(pivotColumn + 1)  + ' ---- ' + 'variable saliente: ' + str(basicVaribles[pivotRow - 1]))
+
+        basicVaribles[pivotRow - 1] = pivotColumn + 1
+
+        print(basicVaribles)
 
         # divide toda la fila pivot por el numero pivot
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
@@ -135,13 +189,20 @@ def bigM(matrix, optimization, variables, restrictions):
             matrix[row] = np.add(matrix[row], test)
 
     roundMatrix(matrix)
-    print(matrix)
 
-    # aqui se tiene que guardar la matriz
+    #aqui se tiene que guardar la matriz
 
     # en caso de que la optimizacion sea 'min' se  multiplica por -1 U
-    if (optimization == 'min'):
-        matrix[0][len(matrix[0]) - 1] = matrix[0][len(matrix[0]) - 1] * -1
+    if(optimization == 'min'):
+        matrix[0][len(matrix[0]) - 1] =  matrix[0][len(matrix[0]) - 1] * -1
+
+    for i in range(len(basicVaribles)):
+        if ((basicVaribles[i] - 1) in indexOfArtificialsBigM):
+            print('En la última iteracion se encuentra todavía una variable artificial por lo que la solución no es factible')
+
+    isMultiplesolutions(matrix, basicVaribles)
+
+    print(matrix)
 
     result = finalResult(matrix, matrixLen)
 
@@ -203,12 +264,12 @@ def getPivotValues(matrix):
             pivotValues[0] = rigthSide
             pivotValues[1] = row
             pivotNumber = posiblePivotNumber
-
+    
     #verifica la U no esta acotada -- si funciona para simplex
     if(pivotNumber == 0):
         print('En la iteracion actual todos los valores en la columna pivot son negativos o cero, por lo tanto la U no está acotada')
         sys.exit()
-
+    
     pivotValues[0] = pivotNumber
     pivotValues[1] = [pivotValues[1], indexOfLowestNumber]
     return pivotValues
@@ -231,6 +292,20 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
     #es un arreglo que posee el indice donde estan las variables artificiales
     artifialValuesIndex = (np.where(matrix[0] != 0))[0]
+
+    # manejo de varibles basicas que hay en la iteracion
+    basicVaribles = []
+
+    for i in range(len(artifialValuesIndex)):
+        basicVaribles.append(artifialValuesIndex[i] + 1)
+
+    count = 0
+
+    for i in range((restrictions - len(basicVaribles))):
+        basicVaribles.insert(count, variables + 1 + i)
+        count += 1
+    
+    print(basicVaribles)
 
     count = 0
 
@@ -258,6 +333,12 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
         # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
 
+        print('Variable entrante: '  + str(pivotColumn + 1)  + ' ---- ' + 'variable saliente: ' + str(basicVaribles[pivotRow - 1]))
+
+        basicVaribles[pivotRow - 1] = pivotColumn + 1
+
+        print(basicVaribles)
+
         # divide toda la fila pivot por el numero pivot
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
 
@@ -266,9 +347,9 @@ def twoPhases(matrix, optimization, variables, restrictions):
             roundMatrix(matrix)
             if (row == pivotRow or matrix[row][pivotColumn] == 0):
                 continue
-
+            
             idkHowtoCallIt = matrix[row][pivotColumn] * -1
-
+            
             test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
 
             matrix[row] = np.add(matrix[row], test)
@@ -283,7 +364,7 @@ def twoPhases(matrix, optimization, variables, restrictions):
     # sustituir los valores en la función objetivo
     for objOrgValues in range(variables):
         matrix[0][objOrgValues] = num(copyMatrix[0][objOrgValues])
-
+    
     # hacer cero las variables básicas
     count = 0
 
@@ -301,6 +382,8 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
     roundMatrix(matrix)
 
+    print(artifialValuesIndex)
+
     # termina la fase 2 con el algoritmo de simplex
     while(isSolution(matrix)):
         pivotValues = getPivotValues(matrix)
@@ -311,6 +394,12 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
         # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
 
+        print('Variable entrante: '  + str(pivotColumn + 1)  + ' ---- ' + 'variable saliente: ' + str(basicVaribles[pivotRow - 1]))
+
+        basicVaribles[pivotRow - 1] = pivotColumn + 1
+
+        print(basicVaribles)
+
         # divide toda la fila pivot por el numero pivot
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
 
@@ -319,9 +408,9 @@ def twoPhases(matrix, optimization, variables, restrictions):
             roundMatrix(matrix)
             if (row == pivotRow or matrix[row][pivotColumn] == 0):
                 continue
-
+            
             idkHowtoCallIt = matrix[row][pivotColumn] * -1
-
+            
             test = np.multiply(matrix[pivotRow], idkHowtoCallIt)
 
             matrix[row] = np.add(matrix[row], test)
@@ -334,8 +423,10 @@ def twoPhases(matrix, optimization, variables, restrictions):
     if(optimization == 'min'):
         matrix[0][len(matrix[0]) - 1] =  matrix[0][len(matrix[0]) - 1] * -1
 
-    #obtiene el resultado EBNF de la ultima modificacion de la matriz
+    #obtiene el resultado EBNF de la ultima modificacion de la matriz 
     result =  finalResult(matrix,matrixLen)
+
+    isMultiplesolutions(matrix, basicVaribles)
 
     print(matrix)
 
@@ -372,7 +463,7 @@ def isPrefase1Solution(matrix, artificialValuesIndex):
 
     return isReady
 
-#cada valor en la matrix es necesario redondearlo para que la precision no afecte, se redondea con 5 decimales
+#cada valor en la matrix es necesario redondearlo para que la precision no afecte, se redondea con 5 decimales 
 def roundMatrix(matrix):
     for row in range(len(matrix)):
         for column in range((len(matrix[row]))):
@@ -388,7 +479,7 @@ def getPivotRowPrefase1(matrix, artifialValuesIndex):
         for i in range(len(artifialValuesIndex)):
             if(matrix[row][artifialValuesIndex[i]] == 1 and matrix[0][artifialValuesIndex[i]] != 0):
                 return row
-
+    
 
 def addNonBasicVariables(method, matrix, variables, restrictions):
     if (method == 0):
@@ -423,6 +514,10 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
         equalRow = []
         excessColumn = []
 
+        # ------
+        index = variables - 1
+        # ------
+
         #ajuste del tamaño de la matriz y deteccion de estados especiales para el metodo GranM
         for row in matrix:
             if(row[-1] < 0):
@@ -442,11 +537,17 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
         for row in range(1, len(matrix)):
             if ('=' in matrix[row]):
                 matrix[0].append(M)
+                indexOfArtificialsBigM.append(index)
+                index += 1
             elif ('>=' in matrix[row]):
                 matrix[0].append(0)
                 matrix[0].append(M)
+                index += 1
+                indexOfArtificialsBigM.append(index)
+                index += 1
             else:
                 matrix[0].append(0)
+                index += 1
 
         matrix[0].append(0)  # Necesario para agregar el valor de lado derecho
 
@@ -483,7 +584,8 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
             for ex in excessColumn:
                 for e in range(len(matrix[0])):
                     matrix[0][e] = matrix[0][e] + (M * matrix[ex][e] * -1)
-
+        
+                
     elif (method == 2):
         count = 0
 
@@ -502,17 +604,17 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
                     matrix[0].append(0)
 
             matrix[0].append(0) # Necesario para agregar el valor de lado derecho
-
+            
             for i in range(orgSizeObj):
                 matrix[0][i] = 0
-
+        
             count = 1
 
             totalOfVaribles = len(matrix[0])
 
             for row in range(len(matrix)):
                 for column in range(totalOfVaribles):
-                    if (row >= 1 and column > variables):
+                    if (row >= 1 and column > variables):                        
                         matrix[row].insert((len(matrix[row]) - 1), 0)
                 if (row >= 1):
                     if(matrix[row][variables] == '>='):
@@ -544,10 +646,8 @@ def formatMatrix(matrix):
             matrix[row].remove('=')
         for column in range(len(matrix[row])):
             matrix[row][column] = num(matrix[row][column])
-
+            
     return matrix
-
-
 
 def num(s):
     if(s < 0):
