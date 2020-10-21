@@ -49,7 +49,7 @@ def loadValues(matrix):
         print('A non a valid method was sent as parameter')
         return None
 
-    print("The final result is: U = " + str(result[0]) + ", " + str(result[1]))
+    writeInOuputFile("The final result is: U = " + str(result[0]) + ", " + str(result[1]))
 
 
 def mintoMax(optimization, matrix):
@@ -60,16 +60,15 @@ def mintoMax(optimization, matrix):
 
 def isMultiplesolutions(matrix, basicVariables):
     nonBasicVariables = []
-    lenURow = len(matrix[0])
+    lenURow = len(matrix[0]) - 1
 
     for i in range(lenURow):
-        if ((i + 1) in basicVariables):
+        if (not (i + 1) in basicVariables):
             nonBasicVariables.append(i)
 
     for i in range(len(nonBasicVariables)):
-        if  (-0.0001 <= matrix[0][i] <= 0.0001):
-            print("Esta problema posee soluciones multiples")
-            # aqui guarda en archivo
+        if  (-0.0001 <= matrix[0][nonBasicVariables[i]] <= 0.0001):
+            writeInOuputFile("Este problema posee soluciones multiples")
 
     return matrix
 
@@ -198,7 +197,7 @@ def bigM(matrix, optimization, variables, restrictions):
 
     for i in range(len(basicVaribles)):
         if ((basicVaribles[i] - 1) in indexOfArtificialsBigM):
-            print('En la última iteracion se encuentra todavía una variable artificial por lo que la solución no es factible')
+            writeInOuputFile('En la última iteracion se encuentra todavía una variable artificial por lo que la solución no es factible')
 
     isMultiplesolutions(matrix, basicVaribles)
 
@@ -259,7 +258,7 @@ def getPivotValues(matrix):
 
         #verifica si hay soluciones de generadas en cada iteración -- si funciona para simplex
         if(rigthSide == pivotValues[0]):
-            print("La solución es degenerada, los números en la columna pivot que generan el caso son:" + str(pivotNumber) + " y " + str(posiblePivotNumber))
+            writeInOuputFile("La solución es degenerada, los números en la columna pivot que generan el caso son:" + str(pivotNumber) + " y " + str(posiblePivotNumber))
         if(rigthSide < pivotValues[0]):
             pivotValues[0] = rigthSide
             pivotValues[1] = row
@@ -267,7 +266,7 @@ def getPivotValues(matrix):
     
     #verifica la U no esta acotada -- si funciona para simplex
     if(pivotNumber == 0):
-        print('En la iteracion actual todos los valores en la columna pivot son negativos o cero, por lo tanto la U no está acotada')
+        writeInOuputFile('En la iteracion actual todos los valores en la columna pivot son negativos o cero, por lo tanto la U no está acotada')
         sys.exit()
     
     pivotValues[0] = pivotNumber
@@ -515,7 +514,7 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
         excessColumn = []
 
         # ------
-        index = variables - 1
+        index = variables
         # ------
 
         #ajuste del tamaño de la matriz y deteccion de estados especiales para el metodo GranM
@@ -649,13 +648,28 @@ def formatMatrix(matrix):
             
     return matrix
 
+def createOutputFile():
+    fileName = getFileName()
+    global outputFileName
+    outputFileName = fileName.replace(".txt", "_solution.txt")
+    open(outputFileName, 'w+')
+
+def writeInOuputFile(text):
+    file =  open(outputFileName, "a")
+    file.write(text + '\n')
+    file.close
+    print(text)
+
+
 def num(s):
     try:
         return float(s)
     except ValueError:
         return int(s)
+
 def main():
     listOfLists = fileOperations()
+    createOutputFile()
     loadValues(listOfLists)
 
 
