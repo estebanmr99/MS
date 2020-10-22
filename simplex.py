@@ -660,6 +660,38 @@ def writeInOuputFile(text):
     file.close
     print(text)
 
+def writeMatrixFile():
+    s = [[1,1,1,1,1], [2,2,2,2,2], [3,3,3,3,3],[4,4,4,4,4]]
+    testMatrix = np.matrix(s, dtype= np.str)
+
+    aiv = [1,2,3,4,5]
+    arrayInputValues = np.array(aiv,dtype=np.str)
+    arrayInputValues = np.insert(arrayInputValues, 0, ['VB'], 0)
+
+    aov = [1,2,3]
+    arrayOutputValues = np.array(aov, dtype=np.str)
+    arrayOutputValues = np.insert(arrayOutputValues, 0, ['U'], 0)
+
+    aiop = [2,3,9]
+    arrayIOP = np.array(aiop, dtype=np.str)
+
+    iteration = 1
+
+    a = np.insert(testMatrix, 0, arrayOutputValues, 1)
+
+    b = np.insert(a, 0, arrayInputValues, 0)
+
+    file = open(outputFileName, "a")
+
+    file.write('Estado: ' + str(iteration) + '\n')
+    for row in b:
+        #np.savetxt(file, row, fmt='%.2f')
+        for column in row:
+            file.write(str(column) + ' ')
+        file.write('\n')
+    file.write('VB entrante: ' + str(arrayIOP[0]) + ', VB saliente: ' + str(arrayIOP[1]) + ', Número Pivote: ' + str(arrayIOP[2]) + '\n')
+    file.close()
+
 
 def num(s):
     try:
@@ -670,7 +702,8 @@ def num(s):
 def main():
     listOfLists = fileOperations()
     createOutputFile()
-    loadValues(listOfLists)
+    #loadValues(listOfLists)
+    writeMatrixFile()
 
 
 main()
