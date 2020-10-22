@@ -68,7 +68,7 @@ def isMultiplesolutions(matrix, basicVariables):
 
     for i in range(len(nonBasicVariables)):
         if  (-0.0001 <= matrix[0][nonBasicVariables[i]] <= 0.0001):
-            writeInOuputFile("Este problema posee soluciones multiples")
+            writeInOuputFile("This problem has multiple solutions")
 
     return matrix
 
@@ -83,8 +83,8 @@ def simplex(matrix, optimization, variables, restrictions):
 
     for i in range(variables + 1, (len(matrix[0]))):
         basicVaribles.append(i)
-    
-    print(basicVaribles)
+
+    iteration = 0
 
     matrix = np.array([np.array(row) for row in matrix], dtype=object)
 
@@ -95,13 +95,10 @@ def simplex(matrix, optimization, variables, restrictions):
         pivotRow = pivotValues[1][0]
         pivotColumn = pivotValues[1][1]
 
-        # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
-
-        print('Variable entrante: '  + str(pivotColumn + 1)  + ' ---- ' + 'variable saliente: ' + str(basicVaribles[pivotRow - 1]))
+        # Aqui deberia llamar a la funcion que guarda en el txt
+        writeMatrixFile(matrix, basicVaribles, [(pivotColumn + 1), (basicVaribles[pivotRow - 1]), pivotNumber], iteration)
 
         basicVaribles[pivotRow - 1] = pivotColumn + 1
-
-        print(basicVaribles)
 
         #divide toda la fila pivot por el numero pivot
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
@@ -118,14 +115,14 @@ def simplex(matrix, optimization, variables, restrictions):
 
             matrix[row] = np.add(matrix[row], test)
 
+        iteration += 1
     roundMatrix(matrix)
     #aqui se tiene que guardar la matriz
+    writeMatrixFile(matrix, basicVaribles, [], iteration)
 
     # en caso de que la optimizacion sea 'min' se  multiplica por -1 U
     if(optimization == 'min'):
         matrix[0][len(matrix[0]) - 1] =  matrix[0][len(matrix[0]) - 1] * -1
-
-    print(matrix)
 
     isMultiplesolutions(matrix, basicVaribles)
 
@@ -152,10 +149,10 @@ def bigM(matrix, optimization, variables, restrictions):
     for i in range((restrictions - len(basicVaribles))):
         basicVaribles.insert(count, variables + 1 + i)
         count += 1
-    
-    print(basicVaribles)
 
     count = 0
+    
+    iteration = 0
     
     while (isSolution(matrix)):
         pivotValues = getPivotValues(matrix)
@@ -164,13 +161,10 @@ def bigM(matrix, optimization, variables, restrictions):
         pivotRow = pivotValues[1][0]
         pivotColumn = pivotValues[1][1]
 
-        # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
-
-        print('Variable entrante: '  + str(pivotColumn + 1)  + ' ---- ' + 'variable saliente: ' + str(basicVaribles[pivotRow - 1]))
+        # Aqui deberia llamar a la funcion que guarda en el txt
+        writeMatrixFile(matrix, basicVaribles, [(pivotColumn + 1), (basicVaribles[pivotRow - 1]), pivotNumber], iteration)
 
         basicVaribles[pivotRow - 1] = pivotColumn + 1
-
-        print(basicVaribles)
 
         # divide toda la fila pivot por el numero pivot
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
@@ -187,9 +181,12 @@ def bigM(matrix, optimization, variables, restrictions):
 
             matrix[row] = np.add(matrix[row], test)
 
+        iteration += 1
+
     roundMatrix(matrix)
 
     #aqui se tiene que guardar la matriz
+    writeMatrixFile(matrix, basicVaribles, [], iteration)
 
     # en caso de que la optimizacion sea 'min' se  multiplica por -1 U
     if(optimization == 'min'):
@@ -197,11 +194,9 @@ def bigM(matrix, optimization, variables, restrictions):
 
     for i in range(len(basicVaribles)):
         if ((basicVaribles[i] - 1) in indexOfArtificialsBigM):
-            writeInOuputFile('En la última iteracion se encuentra todavía una variable artificial por lo que la solución no es factible')
+            writeInOuputFile('In the last iteration an artificial variable is still found so the solution is not feasible')
 
     isMultiplesolutions(matrix, basicVaribles)
-
-    print(matrix)
 
     result = finalResult(matrix, matrixLen)
 
@@ -258,7 +253,7 @@ def getPivotValues(matrix):
 
         #verifica si hay soluciones de generadas en cada iteración -- si funciona para simplex
         if(rigthSide == pivotValues[0]):
-            writeInOuputFile("La solución es degenerada, los números en la columna pivot que generan el caso son:" + str(pivotNumber) + " y " + str(posiblePivotNumber))
+            writeInOuputFile("The solution is degenerate, the numbers in the pivot column that generate the case are:" + str(pivotNumber) + " and " + str(posiblePivotNumber))
         if(rigthSide < pivotValues[0]):
             pivotValues[0] = rigthSide
             pivotValues[1] = row
@@ -266,7 +261,7 @@ def getPivotValues(matrix):
     
     #verifica la U no esta acotada -- si funciona para simplex
     if(pivotNumber == 0):
-        writeInOuputFile('En la iteracion actual todos los valores en la columna pivot son negativos o cero, por lo tanto la U no está acotada')
+        writeInOuputFile('In the current iteration all the values in the pivot column are negative or zero, therefore the U is not bounded')
         sys.exit()
     
     pivotValues[0] = pivotNumber
@@ -303,8 +298,6 @@ def twoPhases(matrix, optimization, variables, restrictions):
     for i in range((restrictions - len(basicVaribles))):
         basicVaribles.insert(count, variables + 1 + i)
         count += 1
-    
-    print(basicVaribles)
 
     count = 0
 
@@ -320,7 +313,8 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
         count += 1
 
-    # aqui hay que guardar en el archivo
+    iteration = 0
+    writeInOuputFile('Phase #1')
 
     # hace la fase 1 utilizando el algoritmo del simplex
     while(isSolution(matrix)):
@@ -330,13 +324,10 @@ def twoPhases(matrix, optimization, variables, restrictions):
         pivotRow = pivotValues[1][0]
         pivotColumn = pivotValues[1][1]
 
-        # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
-
-        print('Variable entrante: '  + str(pivotColumn + 1)  + ' ---- ' + 'variable saliente: ' + str(basicVaribles[pivotRow - 1]))
+        # Aqui deberia llamar a la funcion que guarda en el txt
+        writeMatrixFile(matrix, basicVaribles, [(pivotColumn + 1), (basicVaribles[pivotRow - 1]), pivotNumber], iteration)
 
         basicVaribles[pivotRow - 1] = pivotColumn + 1
-
-        print(basicVaribles)
 
         # divide toda la fila pivot por el numero pivot
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
@@ -355,14 +346,27 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
         roundMatrix(matrix)
 
+        iteration += 1
+
+    #aqui se tiene que guardar la matriz
+    writeMatrixFile(matrix, basicVaribles, [], iteration)
+
+    writeInOuputFile('Preparation phase #2')
+    
+    iteration = 0
+
     #paso de eliminar las variables artificiales
     matrix = np.delete(matrix, artifialValuesIndex, 1)
 
     # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
+    writeMatrixFile(matrix, basicVaribles, [], iteration)
 
     # sustituir los valores en la función objetivo
     for objOrgValues in range(variables):
         matrix[0][objOrgValues] = num(copyMatrix[0][objOrgValues])
+    
+    iteration += 1
+    writeMatrixFile(matrix, basicVaribles, [], iteration)
     
     # hacer cero las variables básicas
     count = 0
@@ -381,7 +385,11 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
     roundMatrix(matrix)
 
-    print(artifialValuesIndex)
+    iteration += 1
+    writeMatrixFile(matrix, basicVaribles, [], iteration)
+
+    iteration = 0
+    writeInOuputFile('Phase #2')
 
     # termina la fase 2 con el algoritmo de simplex
     while(isSolution(matrix)):
@@ -391,13 +399,10 @@ def twoPhases(matrix, optimization, variables, restrictions):
         pivotRow = pivotValues[1][0]
         pivotColumn = pivotValues[1][1]
 
-        # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
-
-        print('Variable entrante: '  + str(pivotColumn + 1)  + ' ---- ' + 'variable saliente: ' + str(basicVaribles[pivotRow - 1]))
+        # Aqui deberia llamar a la funcion que guarda en el txt
+        writeMatrixFile(matrix, basicVaribles, [(pivotColumn + 1), (basicVaribles[pivotRow - 1]), pivotNumber], iteration)
 
         basicVaribles[pivotRow - 1] = pivotColumn + 1
-
-        print(basicVaribles)
 
         # divide toda la fila pivot por el numero pivot
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
@@ -415,8 +420,10 @@ def twoPhases(matrix, optimization, variables, restrictions):
             matrix[row] = np.add(matrix[row], test)
 
         roundMatrix(matrix)
+        iteration += 1
 
     #aqui se tiene que guardar la matriz
+    writeMatrixFile(matrix, basicVaribles, [], iteration)
 
     # en caso de que la optimizacion sea 'min' se  multiplica por -1 U
     if(optimization == 'min'):
@@ -426,8 +433,6 @@ def twoPhases(matrix, optimization, variables, restrictions):
     result =  finalResult(matrix,matrixLen)
 
     isMultiplesolutions(matrix, basicVaribles)
-
-    print(matrix)
 
     return result
 
@@ -660,22 +665,22 @@ def writeInOuputFile(text):
     file.close
     print(text)
 
-def writeMatrixFile():
-    s = [[1,1,1,1,1], [2,2,2,2,2], [3,3,3,3,3],[4,4,4,4,4]]
+def writeMatrixFile(s, aov, aiop, iteration):
     testMatrix = np.matrix(s, dtype= np.str)
 
-    aiv = [1,2,3,4,5]
+    aiv = []
+    for i in range(len(s[0]) - 1):
+        aiv.append(i + 1)
+    aiv.append('RS')
+    
     arrayInputValues = np.array(aiv,dtype=np.str)
-    arrayInputValues = np.insert(arrayInputValues, 0, ['VB'], 0)
+    arrayInputValues = np.insert(arrayInputValues, 0, ['BV'], 0)
 
-    aov = [1,2,3]
     arrayOutputValues = np.array(aov, dtype=np.str)
     arrayOutputValues = np.insert(arrayOutputValues, 0, ['U'], 0)
 
-    aiop = [2,3,9]
     arrayIOP = np.array(aiop, dtype=np.str)
 
-    iteration = 1
 
     a = np.insert(testMatrix, 0, arrayOutputValues, 1)
 
@@ -683,13 +688,14 @@ def writeMatrixFile():
 
     file = open(outputFileName, "a")
 
-    file.write('Estado: ' + str(iteration) + '\n')
+    file.write('Iteration: ' + str(iteration) + '\n')
     for row in b:
-        #np.savetxt(file, row, fmt='%.2f')
         for column in row:
             file.write(str(column) + ' ')
         file.write('\n')
-    file.write('VB entrante: ' + str(arrayIOP[0]) + ', VB saliente: ' + str(arrayIOP[1]) + ', Número Pivote: ' + str(arrayIOP[2]) + '\n')
+    if(aiop):
+        file.write('BV incoming: ' + str(arrayIOP[0]) + ', BV outgoing: ' + str(arrayIOP[1]) + ', Pivot number: ' + str(arrayIOP[2]) + '\n')
+    file.write('\n')
     file.close()
 
 
@@ -702,8 +708,6 @@ def num(s):
 def main():
     listOfLists = fileOperations()
     createOutputFile()
-    #loadValues(listOfLists)
-    writeMatrixFile()
-
+    loadValues(listOfLists)
 
 main()
