@@ -296,10 +296,6 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
     matrix = np.array([np.array(row) for row in matrix], dtype=object)
 
-    if (optimization == 'max'):
-        for variable in range(len(matrix[0])):
-            matrix[0][variable] = int(matrix[0][variable]) * -1
-
     # is an array that has the index where the artificial variables are
     artifialValuesIndex = (np.where(matrix[0] != 0))[0]
 
@@ -378,6 +374,10 @@ def twoPhases(matrix, optimization, variables, restrictions):
     # substitute the values in the objective function
     for objOrgValues in range(variables):
         matrix[0][objOrgValues] = num(copyMatrix[0][objOrgValues])
+
+    if (optimization == 'max'):
+        for variable in range(len(matrix[0])):
+            matrix[0][variable] = int(matrix[0][variable]) * -1
     
     iteration += 1
     writeMatrixFile(matrix, basicVaribles, [], iteration)
@@ -482,81 +482,86 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
                 count += 1
 
     elif (method == 1):
-        count = 0
-        equalRow = []
-        excessColumn = []
+        isArtificial = isPresentAnAritificial(matrix)
 
-        index = variables
+        if(isArtificial):
+            count = 0
+            equalRow = []
+            excessColumn = []
 
-        # matrix size adjustment and detection of special states for the Big M method
+            index = variables
 
-        for row in matrix:
-            if(num(row[-1]) < 0):
-                row = row * -1
-                if('<=' in row):
-                    row[-2] = '>='
-                elif('>=' in row):
-                    row[-2] = '<='
-            # if there is an '=' in the constraints, the row number is added to an array of rows with '='
-            if ('=' in row):
-                equalRow.append(count)
+            # matrix size adjustment and detection of special states for the Big M method
 
-            # if there is a '> =' in the constraints, the row number is added to an array of rows with '> ='
-            elif ('>=' in row):
-                excessColumn.append(count)
-            count+=1
+            for row in matrix:
+                if(num(row[-1]) < 0):
+                    row = row * -1
+                    if('<=' in row):
+                        row[-2] = '>='
+                    elif('>=' in row):
+                        row[-2] = '<='
+                # if there is an '=' in the constraints, the row number is added to an array of rows with '='
+                if ('=' in row):
+                    equalRow.append(count)
 
-        for row in range(1, len(matrix)):
-            if ('=' in matrix[row]):
-                matrix[0].append(M)
-                indexOfArtificialsBigM.append(index)
-                index += 1
-            elif ('>=' in matrix[row]):
-                matrix[0].append(0)
-                matrix[0].append(M)
-                index += 1
-                indexOfArtificialsBigM.append(index)
-                index += 1
-            else:
-                matrix[0].append(0)
-                index += 1
+                # if there is a '> =' in the constraints, the row number is added to an array of rows with '> ='
+                elif ('>=' in row):
+                    excessColumn.append(count)
+                count+=1
 
-        matrix[0].append(0) # needed to add the right side value
-
-        totalOfVaribles = len(matrix[0])
-
-        # the array is traversed to add specific values
-        count = 1
-
-        totalOfVaribles = len(matrix[0])
-
-        for row in range(len(matrix)):
-            for column in range(totalOfVaribles):
-                if (row >= 1 and column > variables):
-                    matrix[row].insert((len(matrix[row]) - 1), 0)
-            if (row >= 1):
-                if (matrix[row][variables] == '>='):
-                    matrix[row][variables + count] = -1
-                    count += 1
-                    matrix[row][variables + count] = 1
+            for row in range(1, len(matrix)):
+                if ('=' in matrix[row]):
+                    matrix[0].append(M)
+                    indexOfArtificialsBigM.append(index)
+                    index += 1
+                elif ('>=' in matrix[row]):
+                    matrix[0].append(0)
+                    matrix[0].append(M)
+                    index += 1
+                    indexOfArtificialsBigM.append(index)
+                    index += 1
                 else:
-                    matrix[row][variables + count] = 1
-                count += 1
+                    matrix[0].append(0)
+                    index += 1
 
-        matrix = formatMatrix(matrix)
+            matrix[0].append(0) # needed to add the right side value
 
-        # calculation that is made to row 0 due to variable M
-        if(equalRow):
-            for er in equalRow:
-                for v in range(len(matrix[0])):
-                    matrix[0][v] = matrix[0][v] + (M * matrix[er][v] * -1)
+            totalOfVaribles = len(matrix[0])
 
-        # modification made to the matrix, adding a new column
-        if(excessColumn):
-            for ex in excessColumn:
-                for e in range(len(matrix[0])):
-                    matrix[0][e] = matrix[0][e] + (M * matrix[ex][e] * -1)
-        
+            # the array is traversed to add specific values
+            count = 1
+
+            totalOfVaribles = len(matrix[0])
+
+            for row in range(len(matrix)):
+                for column in range(totalOfVaribles):
+                    if (row >= 1 and column > variables):
+                        matrix[row].insert((len(matrix[row]) - 1), 0)
+                if (row >= 1):
+                    if (matrix[row][variables] == '>='):
+                        matrix[row][variables + count] = -1
+                        count += 1
+                        matrix[row][variables + count] = 1
+                    else:
+                        matrix[row][variables + count] = 1
+                    count += 1
+
+            matrix = formatMatrix(matrix)
+
+            # calculation that is made to row 0 due to variable M
+            if(equalRow):
+                for er in equalRow:
+                    for v in range(len(matrix[0])):
+                        matrix[0][v] = matrix[0][v] + (M * matrix[er][v] * -1)
+
+            # modification made to the matrix, adding a new column
+            if(excessColumn):
+                for ex in excessColumn:
+                    for e in range(len(matrix[0])):
+                        matrix[0][e] = matrix[0][e] + (M * matrix[ex][e] * -1)
+        else:
+            writeInOuputFile('The problem doesn\'t contain any: \'>=\' or \'=\'')
+            sys.exit()
                 
     elif (method == 2):
         count = 0
@@ -598,6 +603,9 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
                     count += 1
 
             matrix = formatMatrix(matrix)
+        else:
+            writeInOuputFile('The problem doesn\'t contain any: \'>=\' or \'=\'')
+            sys.exit()
     return matrix
 
 # Parameters: Matrix
