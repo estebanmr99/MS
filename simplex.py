@@ -18,8 +18,8 @@ def main():
     loadValues(listOfLists)
 
 # Parameters: None
-# Returns: A matrix containing all the values read from the file sent as argument
-# Description: Splits the content of the file sent as argument based on the commas
+# Returns: A matrix containing all the values read from the file sent as an argument
+# Description: Splits the content of the file sent as an argument based on the commas
 
 def fileOperations():
     lines = open(getFileName(), 'r').readlines()
@@ -95,7 +95,7 @@ def writeMatrixFile(matrix, basicVariables, pivotValues, iteration):
 
 # Parameters: text - it may be any string needed to be written in the output file and in the console
 # Returns: None
-# Description: Writes the string received as parameter into the file
+# Description: Writes the string received as a parameter into the file
 
 def writeInOuputFile(text):
     file =  open(outputFileName, "a")
@@ -135,7 +135,7 @@ def loadValues(matrix):
 
 # Parameters: optimization
 # Returns: Matrix
-# Description: if the optimization is max multiply by -1 the first row of the matrix 
+# Description: if the optimization is 'max' multiply by -1 the first row of the matrix 
 
 def mintoMax(optimization, matrix):
     if (optimization == 'max'):
@@ -610,7 +610,7 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
 
 # Parameters: Matrix
 # Returns: pivot values -  array containing the pivot row, pivot column and pivot number
-# Description: determinates the pivot row, pivot column and pivot number
+# Description: determinates the pivot row, pivot column, and pivot number
 
 def getPivotValues(matrix):
     lowestNumber = np.sort(matrix[0])
