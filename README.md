@@ -3,6 +3,7 @@
 Examples used to test the program:
 
 ------ simplex
+
 0,max,2,4
 5,4
 6,4,<=,24
@@ -23,12 +24,14 @@ Examples used to test the program:
 -3,2,1,<=,3
 
 ------ Degenerate solution
+
 0,max,2,2
 3,9
 1,4,<=,8
 1,2,<=,4
 
 ------ U is not bounded
+
 0,max,3,3
 20,10,1
 3,-3,5,<=,50
@@ -36,6 +39,7 @@ Examples used to test the program:
 1,-1,4,<=,20
 
 ------ Two phases
+
 2,min,2,3
 0.4,0.5
 0.3,0.1,<=,2.7
@@ -55,6 +59,7 @@ Examples used to test the program:
 3,14,15,>=,16
 
 ------ Big M
+
 1,max,2,3
 3,5
 1,0,<=,4
