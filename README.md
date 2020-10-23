@@ -1,9 +1,87 @@
-# Read me
-#test de permisos
+# Readme
 
-Enlaces de interes
+Examples used to test the program:
 
-* [How to convert a list to an array in Python](https://www.educative.io/edpresso/how-to-convert-a-list-to-an-array-in-python)
-* [Add SUM of values of two LISTS into new LIST](https://stackoverflow.com/questions/14050824/add-sum-of-values-of-two-lists-into-new-list)
-* [Numpy, multiply array with scalar](https://stackoverflow.com/questions/53485221/numpy-multiply-array-with-scalar)
-* [Numpy matrix vector multiplication](https://stackoverflow.com/questions/21562986/numpy-matrix-vector-multiplication)
+------ simplex
+0,max,2,4
+5,4
+6,4,<=,24
+1,2,<=,6
+-1,1,<=,1
+0,1,<=,2
+
+0,max,4,3
+3,-1,3,4
+1,2,2,4,<=,40
+2,-1,1,2,<=,8
+4,-2,1,-1,<=,10
+
+0,max,3,3
+1,-7,3
+2,1,-1,<=,4
+4,-3,0,<=,2
+-3,2,1,<=,3
+
+------ Degenerate solution
+0,max,2,2
+3,9
+1,4,<=,8
+1,2,<=,4
+
+------ U is not bounded
+0,max,3,3
+20,10,1
+3,-3,5,<=,50
+1,0,1,<=,10
+1,-1,4,<=,20
+
+------ Two phases
+2,min,2,3
+0.4,0.5
+0.3,0.1,<=,2.7
+0.5,0.5,=,6
+0.6,0.4,>=,6
+
+2,max,2,3
+3,5
+1,0,<=,4
+0,2,<=,12
+3,2,=,18
+
+2,min,3,3
+2,3,-4
+5,6,7,<=,8
+9,10,11,=,12
+3,14,15,>=,16
+
+------ Big M
+1,max,2,3
+3,5
+1,0,<=,4
+0,2,<=,12
+3,2,=,18
+
+1,min,2,3
+0.4,0.5
+0.3,0.1,<=,2.7
+0.5,0.5,=,6
+0.6,0.4,>=,6
+
+2,min,3,3
+2,3,-4
+5,6,7,<=,8
+9,10,11,=,12
+3,14,15,>=,16
+
+------ Solution is not feasible
+1,max,2,2
+5,4
+2,1,<=,2
+3,4,>=,12
+
+------ Multiple solutions
+2,max,2,3
+2000,3000
+1,1,>=,4
+2,3,<=,10
+400,200,>=,1200
