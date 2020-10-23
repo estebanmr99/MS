@@ -701,7 +701,7 @@ def isSolution(matrix):
     if (indexOfLowestNumber == (len(matrix[0]) - 1)):
         indexOfLowestNumber = (np.where(matrix[0] == lowestNumber[1]))[0][0]
 
-    if(matrix[0][indexOfLowestNumber] >= 0 ):
+    if(matrix[0][indexOfLowestNumber] >= -0.0001 ): #-0.0001 <= matrix[0][nonBasicVariables[i]] <= 0.0001
         return False
 
     return True
