@@ -8,13 +8,18 @@ M = 100
 indexOfArtificialsBigM = []
 outputFileName = ''
 
-def getFileName():
-    return sys.argv[1]
+# Parameters: None
+# Returns: None
+# Description: The main structure for the program because begins and ends the different methods to solve problems of linear programming
 
-def removeEndLine(line):
-    if(line.endswith("\n")):
-        return line.replace("\n", "")
-    return line
+def main():
+    listOfLists = fileOperations()
+    createOutputFile()
+    loadValues(listOfLists)
+
+# Parameters: None
+# Returns: A matrix containing all the values read from the file sent as argument
+# Description: Splits the content of the file sent as argument based on the commas
 
 def fileOperations():
     lines = open(getFileName(), 'r').readlines()
@@ -24,6 +29,83 @@ def fileOperations():
         splittedLine = line.split(",")
         listOfLists.append(splittedLine)
     return listOfLists
+
+# Parameters: None
+# Returns: String - Name of the file sent in the arguments
+# Description: Access to the stack to get the file name sent as an argument
+
+def getFileName():
+    return sys.argv[1]
+
+# Parameters: String - Line from the file 
+# Returns: Strnig - line without the newline char
+# Description: Receives line by line the content from the file read and remove the newline char from each one
+
+def removeEndLine(line):
+    if(line.endswith("\n")):
+        return line.replace("\n", "")
+    return line
+
+# Parameters: None
+# Returns: None
+# Description: Creates a new string from the name of the file adding the _solution.txt label and the file itself
+
+def createOutputFile():
+    fileName = getFileName()
+    global outputFileName
+    outputFileName = fileName.replace(".txt", "_solution.txt")
+    open(outputFileName, 'w+')
+
+# Parameters: Matrix, basicVariables - current basic variables in the iteration, pivotValues - contains the pivot number and pivot BV incoming and BV outgoing
+#            , iteration - current iteration number
+# Returns: None
+# Description: Writes the current information of the iteration into the output file
+
+def writeMatrixFile(matrix, basicVariables, pivotValues, iteration):
+    testMatrix = np.matrix(matrix, dtype= np.str)
+
+    aiv = []
+    for i in range(len(matrix[0]) - 1):
+        aiv.append(i + 1)
+    aiv.append('RS')
+    
+    arrayInputValues = np.array(aiv,dtype=np.str)
+    arrayInputValues = np.insert(arrayInputValues, 0, ['BV'], 0)
+
+    arrayOutputValues = np.array(basicVariables, dtype=np.str)
+    arrayOutputValues = np.insert(arrayOutputValues, 0, ['U'], 0)
+
+    arrayIOP = np.array(pivotValues, dtype=np.str)
+
+    a = np.insert(testMatrix, 0, arrayOutputValues, 1)
+
+    b = np.insert(a, 0, arrayInputValues, 0)
+
+    file = open(outputFileName, "a")
+
+    file.write('Iteration: ' + str(iteration) + '\n')
+    for row in b:
+        for column in row:
+            file.write(str(column) + ' ')
+        file.write('\n')
+    if(pivotValues):
+        file.write('BV incoming: ' + str(arrayIOP[0]) + ', BV outgoing: ' + str(arrayIOP[1]) + ', Pivot number: ' + str(arrayIOP[2]) + '\n')
+    file.write('\n')
+    file.close()
+
+# Parameters: text - it may be any string needed to be written in the output file and in the console
+# Returns: None
+# Description: Writes the string received as parameter into the file
+
+def writeInOuputFile(text):
+    file =  open(outputFileName, "a")
+    file.write(text + '\n')
+    file.close
+    print(text)
+
+# Parameters: Matrix
+# Returns: None
+# Description: Handles the method to be used to solve the problem
 
 def loadValues(matrix):
     fistLine = matrix.pop(0)
@@ -51,6 +133,9 @@ def loadValues(matrix):
 
     writeInOuputFile("The final result is: U = " + str(result[0]) + ", " + str(result[1]))
 
+# Parameters: optimization
+# Returns: Matrix
+# Description: if the optimization is max multiply by -1 the first row of the matrix 
 
 def mintoMax(optimization, matrix):
     if (optimization == 'max'):
@@ -58,20 +143,10 @@ def mintoMax(optimization, matrix):
             matrix[0][variable] = num(matrix[0][variable]) * -1
     return matrix
 
-def isMultiplesolutions(matrix, basicVariables):
-    nonBasicVariables = []
-    lenURow = len(matrix[0]) - 1
-
-    for i in range(lenURow):
-        if (not (i + 1) in basicVariables):
-            nonBasicVariables.append(i)
-
-    for i in range(len(nonBasicVariables)):
-        if  (-0.0001 <= matrix[0][nonBasicVariables[i]] <= 0.0001):
-            writeInOuputFile("This problem has multiple solutions")
-
-    return matrix
-
+# Parameters: matrix, optimizations, variables - int which represent the number of variables present in the problem
+#           , restrictions - int which represent the number of restrictions present in the problem
+# Returns: result - string containing the result of the problem
+# Description: linear programing method using matrix operations
 
 def simplex(matrix, optimization, variables, restrictions):
 
@@ -95,15 +170,14 @@ def simplex(matrix, optimization, variables, restrictions):
         pivotRow = pivotValues[1][0]
         pivotColumn = pivotValues[1][1]
 
-        # Aqui deberia llamar a la funcion que guarda en el txt
         writeMatrixFile(matrix, basicVaribles, [(pivotColumn + 1), (basicVaribles[pivotRow - 1]), pivotNumber], iteration)
 
         basicVaribles[pivotRow - 1] = pivotColumn + 1
 
-        #divide toda la fila pivot por el numero pivot
+        # divides the entire pivot row by the pivot number
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
 
-        # hace las operaciones entre las filas y columnas
+        # does the operations between the rows and columns
         for row in range(matrixLen):
             roundMatrix(matrix)
             if (row == pivotRow or matrix[row][pivotColumn] == 0):
@@ -117,10 +191,10 @@ def simplex(matrix, optimization, variables, restrictions):
 
         iteration += 1
     roundMatrix(matrix)
-    #aqui se tiene que guardar la matriz
+
     writeMatrixFile(matrix, basicVaribles, [], iteration)
 
-    # en caso de que la optimizacion sea 'min' se  multiplica por -1 U
+    # in case the optimization is 'min' it is multiplied by -1 U
     if(optimization == 'min'):
         matrix[0][len(matrix[0]) - 1] =  matrix[0][len(matrix[0]) - 1] * -1
 
@@ -130,6 +204,11 @@ def simplex(matrix, optimization, variables, restrictions):
     
     return result
 
+# Parameters: matrix, optimizations, variables - int which represent the number of variables present in the problem
+#           , restrictions - int which represent the number of restrictions present in the problem
+# Returns: result - string containing the result of the problem
+# Description: linear programing method using matrix operations
+
 def bigM(matrix, optimization, variables, restrictions):
 
     matrixLen = len(matrix)
@@ -138,7 +217,7 @@ def bigM(matrix, optimization, variables, restrictions):
 
     matrix = np.array([np.array(row) for row in matrix], dtype=object)
 
-    # manejo de varibles basicas que hay en la iteracion
+    # handling of basic variables that are in the iteration
     basicVaribles = []
 
     for i in range(len(indexOfArtificialsBigM)):
@@ -161,15 +240,14 @@ def bigM(matrix, optimization, variables, restrictions):
         pivotRow = pivotValues[1][0]
         pivotColumn = pivotValues[1][1]
 
-        # Aqui deberia llamar a la funcion que guarda en el txt
         writeMatrixFile(matrix, basicVaribles, [(pivotColumn + 1), (basicVaribles[pivotRow - 1]), pivotNumber], iteration)
 
         basicVaribles[pivotRow - 1] = pivotColumn + 1
 
-        # divide toda la fila pivot por el numero pivot
+        # divides the entire pivot row by the pivot number
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
 
-        # hace las operaciones entre las filas y columnas
+        # does the operations between the rows and columns
         for row in range(matrixLen):
             roundMatrix(matrix)
             if (row == pivotRow or matrix[row][pivotColumn] == 0):
@@ -185,10 +263,9 @@ def bigM(matrix, optimization, variables, restrictions):
 
     roundMatrix(matrix)
 
-    #aqui se tiene que guardar la matriz
     writeMatrixFile(matrix, basicVaribles, [], iteration)
 
-    # en caso de que la optimizacion sea 'min' se  multiplica por -1 U
+    # in case the optimization is 'min' it is multiplied by -1 U
     if(optimization == 'min'):
         matrix[0][len(matrix[0]) - 1] =  matrix[0][len(matrix[0]) - 1] * -1
 
@@ -200,74 +277,15 @@ def bigM(matrix, optimization, variables, restrictions):
 
     result = finalResult(matrix, matrixLen)
 
-    return result
-
-
-def finalResult(matrix, matrixLen):
-    result = []
-    for i in range(matrixLen):
-        if (i == 0):
-            result.append(matrix[i][-1])
-            result.append([])
-        else:
-            result[1].append(matrix[i][-1])
+    text = 'With M = ' + str(M)
+    writeInOuputFile(text)
 
     return result
 
-
-def isSolution(matrix):
-    lowestNumber = np.sort(matrix[0])
-    indexOfLowestNumber = (np.where(matrix[0] == lowestNumber[0]))[0][0]
-
-    if (indexOfLowestNumber == (len(matrix[0]) - 1)):
-        indexOfLowestNumber = (np.where(matrix[0] == lowestNumber[1]))[0][0]
-
-    if(matrix[0][indexOfLowestNumber] >= 0 ):
-        return False
-
-    return True
-
-
-def getPivotValues(matrix):
-    lowestNumber = np.sort(matrix[0])
-    indexOfLowestNumber = (np.where(matrix[0] == lowestNumber[0]))[0][0]
-
-    if (indexOfLowestNumber == (len(matrix[0]) - 1)):
-        indexOfLowestNumber = (np.where(matrix[0] == lowestNumber[1]))[0][0]
-
-    pivotValues = []
-    matrixLen = len(matrix)
-    rowLen = len(matrix[0]) - 1
-    pivotNumber = 0
-
-    for row in range(1, matrixLen):
-        posiblePivotNumber = matrix[row][indexOfLowestNumber]
-        if (posiblePivotNumber <= 0):
-            continue
-        rigthSide =  matrix[row][rowLen] / posiblePivotNumber
-        if (len(pivotValues) == 0):
-            pivotValues.insert(0, rigthSide)
-            pivotValues.insert(1, row)
-            pivotNumber = posiblePivotNumber
-            continue
-
-        #verifica si hay soluciones de generadas en cada iteración -- si funciona para simplex
-        if(rigthSide == pivotValues[0]):
-            writeInOuputFile("The solution is degenerate, the numbers in the pivot column that generate the case are:" + str(pivotNumber) + " and " + str(posiblePivotNumber))
-        if(rigthSide < pivotValues[0]):
-            pivotValues[0] = rigthSide
-            pivotValues[1] = row
-            pivotNumber = posiblePivotNumber
-    
-    #verifica la U no esta acotada -- si funciona para simplex
-    if(pivotNumber == 0):
-        writeInOuputFile('In the current iteration all the values in the pivot column are negative or zero, therefore the U is not bounded')
-        sys.exit()
-    
-    pivotValues[0] = pivotNumber
-    pivotValues[1] = [pivotValues[1], indexOfLowestNumber]
-    return pivotValues
-
+# Parameters: matrix, optimizations, variables - int which represent the number of variables present in the problem
+#           , restrictions - int which represent the number of restrictions present in the problem
+# Returns: result - string containing the result of the problem
+# Description: linear programing method using matrix operations
 
 def twoPhases(matrix, optimization, variables, restrictions):
     matrixLen = len(matrix)
@@ -282,12 +300,10 @@ def twoPhases(matrix, optimization, variables, restrictions):
         for variable in range(len(matrix[0])):
             matrix[0][variable] = int(matrix[0][variable]) * -1
 
-    # aqui hay que guardar en el archivo
-
-    #es un arreglo que posee el indice donde estan las variables artificiales
+    # is an array that has the index where the artificial variables are
     artifialValuesIndex = (np.where(matrix[0] != 0))[0]
 
-    # manejo de varibles basicas que hay en la iteracion
+    # handling of basic variables that are in the iteration
     basicVaribles = []
 
     for i in range(len(artifialValuesIndex)):
@@ -301,7 +317,7 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
     count = 0
 
-    #prepara la funcion objetivo para poder comenzar con la fase 1
+    # prepares the objective function to be able to start with phase #1
     while(not isPrefase1Solution(matrix, artifialValuesIndex)):
         pivotRow = getPivotRowPrefase1(matrix, artifialValuesIndex)
 
@@ -316,7 +332,7 @@ def twoPhases(matrix, optimization, variables, restrictions):
     iteration = 0
     writeInOuputFile('Phase #1')
 
-    # hace la fase 1 utilizando el algoritmo del simplex
+    # does phase #1 using the simplex algorithm
     while(isSolution(matrix)):
         pivotValues = getPivotValues(matrix)
 
@@ -324,15 +340,14 @@ def twoPhases(matrix, optimization, variables, restrictions):
         pivotRow = pivotValues[1][0]
         pivotColumn = pivotValues[1][1]
 
-        # Aqui deberia llamar a la funcion que guarda en el txt
         writeMatrixFile(matrix, basicVaribles, [(pivotColumn + 1), (basicVaribles[pivotRow - 1]), pivotNumber], iteration)
 
         basicVaribles[pivotRow - 1] = pivotColumn + 1
 
-        # divide toda la fila pivot por el numero pivot
+        # divides the entire pivot row by the pivot number
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
 
-        # hace las operaciones entre las filas y columnas
+        # does the operations between the rows and columns
         for row in range(matrixLen):
             roundMatrix(matrix)
             if (row == pivotRow or matrix[row][pivotColumn] == 0):
@@ -348,27 +363,26 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
         iteration += 1
 
-    #aqui se tiene que guardar la matriz
+    
     writeMatrixFile(matrix, basicVaribles, [], iteration)
 
     writeInOuputFile('Preparation phase #2')
     
     iteration = 0
 
-    #paso de eliminar las variables artificiales
+    # step of eliminating artificial variables
     matrix = np.delete(matrix, artifialValuesIndex, 1)
 
-    # Aqui deberia llamar a la funcion que guarda en el txt y la que verifica la matriz
     writeMatrixFile(matrix, basicVaribles, [], iteration)
 
-    # sustituir los valores en la función objetivo
+    # substitute the values in the objective function
     for objOrgValues in range(variables):
         matrix[0][objOrgValues] = num(copyMatrix[0][objOrgValues])
     
     iteration += 1
     writeMatrixFile(matrix, basicVaribles, [], iteration)
     
-    # hacer cero las variables básicas
+    # zero basic variables
     count = 0
 
     while(not isfase2Solution(matrix, variables)):
@@ -391,7 +405,7 @@ def twoPhases(matrix, optimization, variables, restrictions):
     iteration = 0
     writeInOuputFile('Phase #2')
 
-    # termina la fase 2 con el algoritmo de simplex
+    # finishes phase 2 with the simplex algorithm
     while(isSolution(matrix)):
         pivotValues = getPivotValues(matrix)
 
@@ -399,15 +413,14 @@ def twoPhases(matrix, optimization, variables, restrictions):
         pivotRow = pivotValues[1][0]
         pivotColumn = pivotValues[1][1]
 
-        # Aqui deberia llamar a la funcion que guarda en el txt
         writeMatrixFile(matrix, basicVaribles, [(pivotColumn + 1), (basicVaribles[pivotRow - 1]), pivotNumber], iteration)
 
         basicVaribles[pivotRow - 1] = pivotColumn + 1
 
-        # divide toda la fila pivot por el numero pivot
+        # divides the entire pivot row by the pivot number
         matrix[pivotRow] = np.divide(matrix[pivotRow], pivotNumber)
 
-        # hace las operaciones entre las filas y columnas
+        # does the operations between the rows and columns
         for row in range(matrixLen):
             roundMatrix(matrix)
             if (row == pivotRow or matrix[row][pivotColumn] == 0):
@@ -422,10 +435,10 @@ def twoPhases(matrix, optimization, variables, restrictions):
         roundMatrix(matrix)
         iteration += 1
 
-    #aqui se tiene que guardar la matriz
+    
     writeMatrixFile(matrix, basicVaribles, [], iteration)
 
-    # en caso de que la optimizacion sea 'min' se  multiplica por -1 U
+    # in case the optimization is 'min' it is multiplied by -1 U
     if(optimization == 'min'):
         matrix[0][len(matrix[0]) - 1] =  matrix[0][len(matrix[0]) - 1] * -1
 
@@ -436,54 +449,11 @@ def twoPhases(matrix, optimization, variables, restrictions):
 
     return result
 
-# verifica que las variables basicas se hayan vuelto cero en la fase 2
-def isfase2Solution(matrix, variables):
-    isReady = False
-    for i in range(variables):
-        if (matrix[0][i] == 0):
-            isReady = True
-        else:
-            isReady = False
-    return isReady
-
-# obtiene la fila que posee un 1 para poder hacer cero las variables basicas de la fase 2
-def getPivotRowfase2(matrix, variables):
-    matrixLen = len(matrix)
-
-    for row in range(1, matrixLen):
-        for i in range(variables):
-            if(matrix[row][i] == 1 and matrix[0][i] != 0):
-                return row
-
-
-#verifica que se hagan cero las variables atificiales, mientras no sea sean cero devuelve False
-def isPrefase1Solution(matrix, artificialValuesIndex):
-    isReady = False
-    for i in artificialValuesIndex:
-        if (matrix[0][i] != 0):
-            isReady = False
-        else:
-            isReady = True
-
-    return isReady
-
-#cada valor en la matrix es necesario redondearlo para que la precision no afecte, se redondea con 5 decimales 
-def roundMatrix(matrix):
-    for row in range(len(matrix)):
-        for column in range((len(matrix[row]))):
-            matrix[row][column] = round(matrix[row][column],5)
-
-    return matrix
-
-# obtiene la fila que posee un 1 en las restricciones para poder hacer cero las variables artificiales en la funcion objetivo
-def getPivotRowPrefase1(matrix, artifialValuesIndex):
-    matrixLen = len(matrix)
-
-    for row in range(1, matrixLen):
-        for i in range(len(artifialValuesIndex)):
-            if(matrix[row][artifialValuesIndex[i]] == 1 and matrix[0][artifialValuesIndex[i]] != 0):
-                return row
-    
+# Parameters: method -  represents the method selected by the user, matrix, 
+#             variables - int which represent the number of variables present in the problem,
+#             restrictions - int which represent the number of restrictions present in the problem
+# Returns: matrix
+# Description: prepares the matrix to be used on each method adding zeros and the ones to the artificials, excess, etc
 
 def addNonBasicVariables(method, matrix, variables, restrictions):
     if (method == 0):
@@ -511,18 +481,15 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
                 matrix[row][variables + count] = 1
                 count += 1
 
-    #Ajuste de la matriz cuando se tiene que hacer el metodo simplex
     elif (method == 1):
-        #definicion de variables a usar
         count = 0
         equalRow = []
         excessColumn = []
 
-        # ------
         index = variables
-        # ------
 
-        #ajuste del tamaño de la matriz y deteccion de estados especiales para el metodo GranM
+        # matrix size adjustment and detection of special states for the Big M method
+
         for row in matrix:
             if(num(row[-1]) < 0):
                 row = row * -1
@@ -530,10 +497,11 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
                     row[-2] = '>='
                 elif('>=' in row):
                     row[-2] = '<='
-            #si en las restricciones hay un '=', se agrega el numero de fila a un arreglo de filas con '='
+            # if there is an '=' in the constraints, the row number is added to an array of rows with '='
             if ('=' in row):
                 equalRow.append(count)
-            #si en las restricciones hay un '>=', se agrega el numero de fila a un arreglo de filas con '>='
+
+            # if there is a '> =' in the constraints, the row number is added to an array of rows with '> ='
             elif ('>=' in row):
                 excessColumn.append(count)
             count+=1
@@ -553,11 +521,11 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
                 matrix[0].append(0)
                 index += 1
 
-        matrix[0].append(0)  # Necesario para agregar el valor de lado derecho
+        matrix[0].append(0) # needed to add the right side value
 
         totalOfVaribles = len(matrix[0])
 
-        #se recorre la matriz para agregarle valores especificos
+        # the array is traversed to add specific values
         count = 1
 
         totalOfVaribles = len(matrix[0])
@@ -577,13 +545,13 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
 
         matrix = formatMatrix(matrix)
 
-        #calculo que se realiza a la fila 0 debido a la variable M
+        # calculation that is made to row 0 due to variable M
         if(equalRow):
             for er in equalRow:
                 for v in range(len(matrix[0])):
                     matrix[0][v] = matrix[0][v] + (M * matrix[er][v] * -1)
 
-        #modificacion que se hace a la matriz, agregando una columna nueva
+        # modification made to the matrix, adding a new column
         if(excessColumn):
             for ex in excessColumn:
                 for e in range(len(matrix[0])):
@@ -607,7 +575,7 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
                 else:
                     matrix[0].append(0)
 
-            matrix[0].append(0) # Necesario para agregar el valor de lado derecho
+            matrix[0].append(0) # Needed to add the right side value
             
             for i in range(orgSizeObj):
                 matrix[0][i] = 0
@@ -632,13 +600,53 @@ def addNonBasicVariables(method, matrix, variables, restrictions):
             matrix = formatMatrix(matrix)
     return matrix
 
-def isPresentAnAritificial(matrix):
-    for row in matrix:
-        if ('>=' in row):
-            return True
-        elif ('=' in row):
-            return True
-    return False
+# Parameters: Matrix
+# Returns: pivot values -  array containing the pivot row, pivot column and pivot number
+# Description: determinates the pivot row, pivot column and pivot number
+
+def getPivotValues(matrix):
+    lowestNumber = np.sort(matrix[0])
+    indexOfLowestNumber = (np.where(matrix[0] == lowestNumber[0]))[0][0]
+
+    if (indexOfLowestNumber == (len(matrix[0]) - 1)):
+        indexOfLowestNumber = (np.where(matrix[0] == lowestNumber[1]))[0][0]
+
+    pivotValues = []
+    matrixLen = len(matrix)
+    rowLen = len(matrix[0]) - 1
+    pivotNumber = 0
+
+    for row in range(1, matrixLen):
+        posiblePivotNumber = matrix[row][indexOfLowestNumber]
+        if (posiblePivotNumber <= 0):
+            continue
+        rigthSide =  matrix[row][rowLen] / posiblePivotNumber
+        if (len(pivotValues) == 0):
+            pivotValues.insert(0, rigthSide)
+            pivotValues.insert(1, row)
+            pivotNumber = posiblePivotNumber
+            continue
+
+        # checks for degenerate solutions at each iteration
+        if(rigthSide == pivotValues[0]):
+            writeInOuputFile("The solution is degenerate, the numbers in the pivot column that generate the case are: " + str(pivotNumber) + " and " + str(posiblePivotNumber))
+        if(rigthSide < pivotValues[0]):
+            pivotValues[0] = rigthSide
+            pivotValues[1] = row
+            pivotNumber = posiblePivotNumber
+    
+    # checks if the U is not bounded
+    if(pivotNumber == 0):
+        writeInOuputFile('In the current iteration all the values in the pivot column are negative or zero, therefore the U is not bounded')
+        sys.exit()
+    
+    pivotValues[0] = pivotNumber
+    pivotValues[1] = [pivotValues[1], indexOfLowestNumber]
+    return pivotValues
+
+# Parameters: Matrix
+# Returns: Matrix
+# Description: Removes the signs from the matrix and converts all the values into ints/floats
 
 def formatMatrix(matrix):
     for row in range(len(matrix)):
@@ -653,51 +661,9 @@ def formatMatrix(matrix):
             
     return matrix
 
-def createOutputFile():
-    fileName = getFileName()
-    global outputFileName
-    outputFileName = fileName.replace(".txt", "_solution.txt")
-    open(outputFileName, 'w+')
-
-def writeInOuputFile(text):
-    file =  open(outputFileName, "a")
-    file.write(text + '\n')
-    file.close
-    print(text)
-
-def writeMatrixFile(s, aov, aiop, iteration):
-    testMatrix = np.matrix(s, dtype= np.str)
-
-    aiv = []
-    for i in range(len(s[0]) - 1):
-        aiv.append(i + 1)
-    aiv.append('RS')
-    
-    arrayInputValues = np.array(aiv,dtype=np.str)
-    arrayInputValues = np.insert(arrayInputValues, 0, ['BV'], 0)
-
-    arrayOutputValues = np.array(aov, dtype=np.str)
-    arrayOutputValues = np.insert(arrayOutputValues, 0, ['U'], 0)
-
-    arrayIOP = np.array(aiop, dtype=np.str)
-
-
-    a = np.insert(testMatrix, 0, arrayOutputValues, 1)
-
-    b = np.insert(a, 0, arrayInputValues, 0)
-
-    file = open(outputFileName, "a")
-
-    file.write('Iteration: ' + str(iteration) + '\n')
-    for row in b:
-        for column in row:
-            file.write(str(column) + ' ')
-        file.write('\n')
-    if(aiop):
-        file.write('BV incoming: ' + str(arrayIOP[0]) + ', BV outgoing: ' + str(arrayIOP[1]) + ', Pivot number: ' + str(arrayIOP[2]) + '\n')
-    file.write('\n')
-    file.close()
-
+# Parameters: s - string that may be an float or int
+# Returns: int or float
+# Description: converts a string into float or int
 
 def num(s):
     try:
@@ -705,9 +671,127 @@ def num(s):
     except ValueError:
         return int(s)
 
-def main():
-    listOfLists = fileOperations()
-    createOutputFile()
-    loadValues(listOfLists)
+# Parameters: matrix
+# Returns: matrix
+# Description: rounds off each value in the matrix to 5 digits if it is a float number
+
+def roundMatrix(matrix):
+    for row in range(len(matrix)):
+        for column in range((len(matrix[row]))):
+            matrix[row][column] = round(matrix[row][column],5)
+
+    return matrix
+
+# Parameters: Matrix
+# Returns: Boleean
+# Description: Determinates if in the current matrix exist a solution for the simplex algorithm 
+
+def isSolution(matrix):
+    lowestNumber = np.sort(matrix[0])
+    indexOfLowestNumber = (np.where(matrix[0] == lowestNumber[0]))[0][0]
+
+    if (indexOfLowestNumber == (len(matrix[0]) - 1)):
+        indexOfLowestNumber = (np.where(matrix[0] == lowestNumber[1]))[0][0]
+
+    if(matrix[0][indexOfLowestNumber] >= 0 ):
+        return False
+
+    return True
+
+# Parameters: matrix, matrixlen
+# Returns: result - array containing the format for the final result
+# Description: Based on the matrix returns an array with the values necessary for the BNF solution
+
+def finalResult(matrix, matrixLen):
+    result = []
+    for i in range(matrixLen):
+        if (i == 0):
+            result.append(matrix[i][-1])
+            result.append([])
+        else:
+            result[1].append(matrix[i][-1])
+
+    return result
+
+# Parameters: matrix, basicVariables - array containing the column index where the BV are placed
+# Returns: matrix
+# Description: Determinates if the problem has multiple solutions
+
+def isMultiplesolutions(matrix, basicVariables):
+    nonBasicVariables = []
+    lenURow = len(matrix[0]) - 1
+
+    for i in range(lenURow):
+        if (not (i + 1) in basicVariables):
+            nonBasicVariables.append(i)
+
+    for i in range(len(nonBasicVariables)):
+        if  (-0.0001 <= matrix[0][nonBasicVariables[i]] <= 0.0001):
+            writeInOuputFile("This problem has multiple solutions")
+
+    return matrix
+
+# Parameters: Matrix, vararibles - index where the original values of the U function are placed
+# Returns: Boolean
+# Description: verifies that the basic variables have become zero in phase 2
+
+def isfase2Solution(matrix, variables):
+    isReady = False
+    for i in range(variables):
+        if (matrix[0][i] == 0):
+            isReady = True
+        else:
+            isReady = False
+    return isReady
+
+# Parameters: Matrix, vararibles - index where the original values of the U function are placed
+# Returns: Int - represent the row where the pivot number is placed
+# Description: gets the row that has a 1 to be able to zero the basic variables of phase 2
+
+def getPivotRowfase2(matrix, variables):
+    matrixLen = len(matrix)
+
+    for row in range(1, matrixLen):
+        for i in range(variables):
+            if(matrix[row][i] == 1 and matrix[0][i] != 0):
+                return row
+
+# Parameters: Matrix, artificialValesIndex - array that contains the column index where the artificial variables are placed
+# Returns: Boleean
+# Description: verifies that the artificial variables are set to zero, as long as they are not zero returns False
+
+def isPrefase1Solution(matrix, artificialValuesIndex):
+    isReady = False
+    for i in artificialValuesIndex:
+        if (matrix[0][i] != 0):
+            isReady = False
+        else:
+            isReady = True
+
+    return isReady
+
+# Parameters: Matrix, artificialValesIndex - array that contains the column index where the artificial variables are placed
+# Returns: Int - represent the row where the pivot number is placed
+# Description: gets the row that has a 1 in the constraints to be able to zero the artificial variables in the objective function
+
+def getPivotRowPrefase1(matrix, artifialValuesIndex):
+    matrixLen = len(matrix)
+
+    for row in range(1, matrixLen):
+        for i in range(len(artifialValuesIndex)):
+            if(matrix[row][artifialValuesIndex[i]] == 1 and matrix[0][artifialValuesIndex[i]] != 0):
+                return row
+
+# Parameters: Matrix
+# Returns: Boleean
+# Description: Determinates if an artificial variable is going to be present in the current matrix
+
+def isPresentAnAritificial(matrix):
+    for row in matrix:
+        if ('>=' in row):
+            return True
+        elif ('=' in row):
+            return True
+    return False
 
 main()
